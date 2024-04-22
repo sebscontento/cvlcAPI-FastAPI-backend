@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import os
 import psutil
-import base64
 
 app = FastAPI()
 
@@ -162,35 +161,6 @@ async def close_picture():
     return {"status": "Picture closed"}
 
 
-
-users = {'seb': 'psw', 'user2': 'password2'}
-
-@app.post("/reboot")
-async def reboot(request: Request):
-    auth = request.headers.get("Authorization")
-    if not auth:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    auth_type, auth_token = auth.split(" ", 1)
-    if auth_type.lower() != "basic":
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    decoded_credentials = base64.b64decode(auth_token).decode("utf-8")  # Decoding the token here
-
-    username, password = decoded_credentials.split(":", 1)
-
-    if not (username in users and users[username] == password):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    os.system("sudo reboot")
-    return "Server is rebooting..."
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
 #users = {'seb': 'psw', 'user2': 'password2'}
 
 """
@@ -214,3 +184,28 @@ async def reboot(request: Request):
     return "Server is rebooting..."
 
 """
+
+users = {'seb': 'psw', 'user2': 'password2'}
+
+@app.post("/reboot")
+async def reboot(request: Request):
+    auth = request.headers.get("Authorization")
+    if not auth:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    auth_type, auth_token = auth.split(" ", 1)
+    if auth_type.lower() != "basic":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    decoded_credentials = auth_token.encode("utf-8").decode("base64")
+    username, password = decoded_credentials.split(":", 1)
+
+    if not (username in users and users[username] == password):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    os.system("sudo reboot")
+    return "Server is rebooting..."
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
